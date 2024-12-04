@@ -7997,14 +7997,14 @@ const filmsKinopoisk = {
 
 const filmsArr = Object.values(filmsKinopoisk)
 
-const films = filmsArr.map ( item => ({
+const films = filmsArr.map(item => ({
   "id": item.id,
-"title": item.title.original,
-"rating": item.rating.kinopoisk.value,
-"year": item.productionYear,
-"budget": 0,
-"gross": 0,
-"poster": item.gallery.posters.vertical.avatarsUrl,
-"position": item.top250
+  "title": item.title.original,
+  "rating": item.rating.kinopoisk.value,
+  "year": item.productionYear,
+  "budget": 0,
+  "gross": 0,
+  "poster": item.gallery.posters.vertical.avatarsUrl,
+  "position": item.top250
 }))
 console.log(films)
