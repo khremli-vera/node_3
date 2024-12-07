@@ -199,6 +199,13 @@ function areAllFields(body) {
 }
 
 function areTypesRight(body) {
+    if (body.year) {
+        let today = new Date();
+        let year = today.getFullYear();
+        if (body.year < 1895 || body.year > year) {
+            return false
+        }
+    }
     for (key in body) {
         if (typeof body[key] !== fieldTypes[key]) {
             return false
