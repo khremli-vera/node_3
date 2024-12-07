@@ -3,6 +3,17 @@ const fs = require('fs')
 
 let films;
 let filmsArr;
+
+const fieldTypes = {
+        "title": 'string',
+        "rating": 'number',
+        "year": 'number',
+        "budget": 'number',
+        "gross": 'number',
+        "poster": 'string',
+        "position": 'number'
+
+}
 fs.readFile('films.json', (err, data) => {
     films = data.toString();
     filmsArr = JSON.parse(films)
@@ -19,6 +30,8 @@ filmsRouter.get('/films', (req, res) => {
 
 filmsRouter.get('/films/:id', (req, res) => {
     const { body, params } = req;
+ 
+    if (isIdExist(params.id)) {
     let index;
     for (let i = 0; i < filmsArr.length; i++) {
         if (filmsArr[i].id == params.id) {
@@ -26,12 +39,16 @@ filmsRouter.get('/films/:id', (req, res) => {
             break
         }
     }
-    res.send((filmsArr[index]));
+    res.send((filmsArr[index]))} else {
+        res.status(404).send('Incorrect id')
+    }
 }
 )
 
 filmsRouter.post('/films', (req, res) => {
     const { body } = req;
+
+    if (areAllFields(body) && areTypesRight(body)) {
     let id = getID();
     let position;
 
@@ -59,11 +76,14 @@ filmsRouter.post('/films', (req, res) => {
         return a.position - b.position;
     });
 
-    res.status(201).send(newFilm)
+    res.status(201).send(newFilm) } else {
+        res.status(400).send('Invalid data')
+    }
 })
 
 filmsRouter.put('/films/:id', (req, res) => {
     const { body, params } = req;
+    if (isIdExist(params.id) && areTypesRight(body)) {
     let position;
     let prevPosition;
     if (body.position) {
@@ -110,12 +130,15 @@ filmsRouter.put('/films/:id', (req, res) => {
         }
     }
     
-    res.send(filmsArr[index]);
+    res.send(filmsArr[index]); } else {
+        res.status(400).send('Incorrect id or data') 
+    }
 }
 )
 
 filmsRouter.delete('/films/:id', (req, res) => {
     const { params } = req;
+    if (isIdExist(params.id)) {
     let index;
     for (let i = 0; i < filmsArr.length; i++) {
         if (filmsArr[i].id == params.id) {
@@ -126,7 +149,9 @@ filmsRouter.delete('/films/:id', (req, res) => {
     const position = filmsArr[index].position
     filmsArr.splice(index, 1);
     shiftUp(filmsArr, position, filmsArr.length);
-    res.status(200).send('Removed');
+    res.status(200).send('Removed');} else {
+        res.status(404).send('Incorrect id')
+    }
 })
 
 function getID() {
@@ -143,6 +168,11 @@ function isPositionExist(pos) {
     return positions.includes(pos)
 }
 
+function isIdExist(id) {
+    const ids = filmsArr.map(item => item.id)
+    return ids.includes(+id)
+}
+
 function shiftDown(arr, pos, posNext) {
     for (let i = pos - 1; i < posNext; i++) {
         arr[i].position = arr[i].position + 1
@@ -154,5 +184,22 @@ function shiftUp(arr, pos, posNext) {
         arr[i].position = arr[i].position - 1
     }
 }
+
+function areAllFields (body) {
+    if (body.title && body.rating && body.year && body.budget && body.gross && body.poster && body.position) {
+        return true
+    } else {
+        return false
+    }
+}
+
+function areTypesRight(body) { 
+    for (key in body) {
+        if (typeof body[key] !== fieldTypes[key]) {
+            return false
+        }
+    }
+    return true
+} 
 
 module.exports = filmsRouter;
