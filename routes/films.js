@@ -5,13 +5,13 @@ let films;
 let filmsArr;
 
 const fieldTypes = {
-        "title": 'string',
-        "rating": 'number',
-        "year": 'number',
-        "budget": 'number',
-        "gross": 'number',
-        "poster": 'string',
-        "position": 'number'
+    "title": 'string',
+    "rating": 'number',
+    "year": 'number',
+    "budget": 'number',
+    "gross": 'number',
+    "poster": 'string',
+    "position": 'number'
 
 }
 fs.readFile('films.json', (err, data) => {
@@ -30,16 +30,17 @@ filmsRouter.get('/films', (req, res) => {
 
 filmsRouter.get('/films/:id', (req, res) => {
     const { body, params } = req;
- 
+
     if (isIdExist(params.id)) {
-    let index;
-    for (let i = 0; i < filmsArr.length; i++) {
-        if (filmsArr[i].id == params.id) {
-            index = i;
-            break
+        let index;
+        for (let i = 0; i < filmsArr.length; i++) {
+            if (filmsArr[i].id == params.id) {
+                index = i;
+                break
+            }
         }
-    }
-    res.send((filmsArr[index]))} else {
+        res.send((filmsArr[index]))
+    } else {
         res.status(404).send('Incorrect id')
     }
 }
@@ -49,34 +50,35 @@ filmsRouter.post('/films', (req, res) => {
     const { body } = req;
 
     if (areAllFields(body) && areTypesRight(body)) {
-    let id = getID();
-    let position;
+        let id = getID();
+        let position;
 
-    // check position
-    if (isPositionExist(body.position)) {
-        position = body.position;
-        shiftDown(filmsArr, position, filmsArr.length)
+        // check position
+        if (isPositionExist(body.position)) {
+            position = body.position;
+            shiftDown(filmsArr, position, filmsArr.length)
+        } else {
+            position = filmsArr.length + 1;
+        }
+
+        const newFilm = {
+            "id": id,
+            "title": body.title,
+            "rating": body.rating,
+            "year": body.year,
+            "budget": body.budget,
+            "gross": body.gross,
+            "poster": body.poster,
+            "position": position
+        }
+
+        filmsArr.push(newFilm);
+        filmsArr = filmsArr.sort(function (a, b) {
+            return a.position - b.position;
+        });
+        rewriteFile('films.json', filmsArr)
+        res.status(201).send(newFilm)
     } else {
-        position = filmsArr.length + 1;
-    }
-
-    const newFilm = {
-        "id": id,
-        "title": body.title,
-        "rating": body.rating,
-        "year": body.year,
-        "budget": body.budget,
-        "gross": body.gross,
-        "poster": body.poster,
-        "position": position
-    }
-
-    filmsArr.push(newFilm);
-    filmsArr = filmsArr.sort(function (a, b) {
-        return a.position - b.position;
-    });
-
-    res.status(201).send(newFilm) } else {
         res.status(400).send('Invalid data')
     }
 })
@@ -84,54 +86,55 @@ filmsRouter.post('/films', (req, res) => {
 filmsRouter.put('/films/:id', (req, res) => {
     const { body, params } = req;
     if (isIdExist(params.id) && areTypesRight(body)) {
-    let position;
-    let prevPosition;
-    if (body.position) {
+        let position;
+        let prevPosition;
+        if (body.position) {
+            for (let i = 0; i < filmsArr.length; i++) {
+                if (filmsArr[i].id == params.id) {
+                    prevPosition = filmsArr[i].position;
+                    break
+                }
+            }
+            if (isPositionExist(body.position)) {
+                position = body.position;
+            } else {
+                position = filmsArr.length;
+            }
+        }
+
+        if (position < prevPosition) {
+            shiftDown(filmsArr, position, prevPosition - 1)
+        } else if (position > prevPosition && position <= filmsArr.length) {
+            shiftUp(filmsArr, prevPosition - 1, position)
+        } else if (position > prevPosition && position > filmsArr.length) {
+            shiftUp(filmsArr, prevPosition - 1, filmsArr.length)
+        }
+
+        filmsArr = filmsArr.map(item => item.id != params.id ? item : {
+            "id": item.id,
+            "title": body.title || item.title,
+            "rating": body.rating || item.rating,
+            "year": body.year || item.year,
+            "budget": body.budget || item.budget,
+            "gross": body.gross || item.gross,
+            "poster": body.poster || item.poster,
+            "position": position || item.position
+        });
+
+        filmsArr = filmsArr.sort(function (a, b) {
+            return a.position - b.position;
+        });
+        let index;
         for (let i = 0; i < filmsArr.length; i++) {
             if (filmsArr[i].id == params.id) {
-                prevPosition = filmsArr[i].position;
+                index = i;
                 break
             }
         }
-        if (isPositionExist(body.position)) {
-            position = body.position;
-        } else {
-            position = filmsArr.length;
-        }
-    }
-  
-    if (position < prevPosition) {
-        shiftDown(filmsArr, position, prevPosition-1)
-    } else if (position > prevPosition && position <= filmsArr.length) {
-        shiftUp (filmsArr, prevPosition-1, position)
-    } else if (position > prevPosition && position > filmsArr.length) {
-        shiftUp (filmsArr, prevPosition-1, filmsArr.length)
-    }
-
-    filmsArr = filmsArr.map(item => item.id != params.id ? item : {
-        "id": item.id,
-        "title": body.title || item.title,
-        "rating": body.rating || item.rating,
-        "year": body.year || item.year,
-        "budget": body.budget || item.budget,
-        "gross": body.gross || item.gross,
-        "poster": body.poster || item.poster,
-        "position": position || item.position
-    });
-
-    filmsArr = filmsArr.sort(function (a, b) {
-        return a.position - b.position;
-    });
-    let index;
-    for (let i = 0; i < filmsArr.length; i++) {
-        if (filmsArr[i].id == params.id) {
-            index = i;
-            break
-        }
-    }
-    
-    res.send(filmsArr[index]); } else {
-        res.status(400).send('Incorrect id or data') 
+        rewriteFile('films.json', filmsArr)
+        res.send(filmsArr[index]);
+    } else {
+        res.status(400).send('Incorrect id or data')
     }
 }
 )
@@ -139,17 +142,19 @@ filmsRouter.put('/films/:id', (req, res) => {
 filmsRouter.delete('/films/:id', (req, res) => {
     const { params } = req;
     if (isIdExist(params.id)) {
-    let index;
-    for (let i = 0; i < filmsArr.length; i++) {
-        if (filmsArr[i].id == params.id) {
-            index = i;
-            break
+        let index;
+        for (let i = 0; i < filmsArr.length; i++) {
+            if (filmsArr[i].id == params.id) {
+                index = i;
+                break
+            }
         }
-    }
-    const position = filmsArr[index].position
-    filmsArr.splice(index, 1);
-    shiftUp(filmsArr, position, filmsArr.length);
-    res.status(200).send('Removed');} else {
+        const position = filmsArr[index].position
+        filmsArr.splice(index, 1);
+        shiftUp(filmsArr, position, filmsArr.length);
+        rewriteFile('films.json', filmsArr)
+        res.status(200).send('Removed');
+    } else {
         res.status(404).send('Incorrect id')
     }
 })
@@ -159,7 +164,7 @@ function getID() {
     let i = 1;
     while (ids.includes(i)) {
         i++
-      }
+    }
     return i
 }
 
@@ -185,7 +190,7 @@ function shiftUp(arr, pos, posNext) {
     }
 }
 
-function areAllFields (body) {
+function areAllFields(body) {
     if (body.title && body.rating && body.year && body.budget && body.gross && body.poster && body.position) {
         return true
     } else {
@@ -193,13 +198,24 @@ function areAllFields (body) {
     }
 }
 
-function areTypesRight(body) { 
+function areTypesRight(body) {
     for (key in body) {
         if (typeof body[key] !== fieldTypes[key]) {
             return false
         }
     }
     return true
-} 
+}
+
+function rewriteFile(path, array) {
+    let json = JSON.stringify(array);
+    fs.writeFile(path, json, 'utf-8', (err) => {
+        if (err) {
+            console.log('Cant write to file');
+        } else {
+            console.log('the file was updated')
+        }
+    })
+}
 
 module.exports = filmsRouter;
